@@ -1,4 +1,4 @@
-# Unofficial Earthquake (Delay) Warning System | 非官方地震架空模拟系统
+# Unofficial Earthquake (Delay) Warning System | 非官方地震架空模拟系统(延迟测定)
 🌐 开源的地震信息架空模拟系统
 
 ## 功能
