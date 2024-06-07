@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="shortcut icon" href="favicon.ico" >
+    <script type="text/javascript"
+        src="https://api.map.baidu.com/api?type=webgl&v=1.0&ak=webgl&ak=FlbWYf8Htrg9j3SQAokFG7qwBBHWbqXg"></script>
+    <script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <title>UEWS架空模拟</title>
+</head>
+
+<body>
+    <div id="allmap"></div>
+    <div id="currentTime">2080-01-01 00:00:00</div>
+    <div>
+        <!--<iframe src="https://bousai.cn/LocalShindo/index.html" id="bbshindo" frameborder="0"></iframe>-->
+        <button id="myBtn" class = "bu">设置</button>
+        <button id="myBtn2" class = "bu2">居中</button>
+        <form>
+            <div>
+                <label class="form-control-label">经度:</label>
+                <input class="form-control-input" id="1" type="text" name="经度" required>
+                <div class="form-control-text" id="form-control-text"></div>
+            </div>
+            <div class="form-control2">
+                <label class="form-control-label2">纬度:</label>
+                <input class="form-control-input2" id="2" type="text" name="纬度" required>
+                <div class="form-control-text2" id="form-control-text2"></div>
+            </div>
+        </form>
+        <button id="myBtn3" class="bu3">OK</button>
+        <button id="myBtn4" class="bu4">取消</button>
+        <form method="POST" action="/" enctype="multipart/form-data">
+            <div class="_bu5">选择文件</div>
+            <input type="file" class = "bu5" id="myBtn5" name="tar_file" accept=".tar">
+            <input type="submit" class = "bu6" id="myBtn6" value="开始模拟">
+        </form>
+        <button id="myBtn7" class="bu7">预警</button>
+    </div>
+    
+
+    <div id="textbox">当前无生效中的地震模拟</div>
+    <div id="Logbox_background">
+        <div id = "Log_type">模拟日志</div>
+        <div id = "Logbox">
+        </div>
+    </div>
+    
+    <div id="warning_textbox">当前无错误</div>
+
+    <!--地震预警框icl\sceew-->
+    <div id="eewmainBar">
+        <div id="eewmainRight">
+            <div id="eewmainTime">01/01 00:00</div>
+            <div id="eewmainEpicenter">载入中</div>
+            <div id="eewmainDepth">0<font size="3">&nbsp;km</font>
+            </div>
+            <div id="eewmainMagnitude">
+                <font size="4">M</font>0.0
+            </div>
+        </div>
+        <div id="eewmainMaxInt">-</div>
+    </div>
+
+    <!--地震预警框sceew-->
+    <div id="eewmainBar2">
+        <div id="eewmainRight2">
+            <div id="eewmainTime2">01/01 00:00</div>
+            <div id="eewmainEpicenter2">载入中</div>
+            <div id="eewmainDepth2">0<font size="3">&nbsp;km</font>
+            </div>
+            <div id="eewmainMagnitude2">
+                <font size="4">M</font>0.0
+            </div>
+        </div>
+        <div id="eewmainMaxInt2">-</div>
+    </div>
+
+    <div id="countDown">
+        <div id="countDown_LocalName">本地预估</div>
+        <div id="countDown_LocalName2">预计抵达时间</div>
+        <div id = "countDown_Run">
+            <div id="eewMaxInt">-</div>
+            <div id="countDown_PBorder">
+                <div id="countDown_P">P波</div>
+                <div id="countDown_PNumber">NaN</div>
+            </div>
+            <div id="countDown_SBorder">
+                <div id="countDown_P">S波</div>
+                <div id="countDown_SNumber">NaN</div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
+<script src="{{ url_for('static', filename='index.js') }}"></script>
+<script>
+    console.log("UDTW \nPowered By RainYang")
+</script>

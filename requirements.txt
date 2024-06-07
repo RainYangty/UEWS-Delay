@@ -1,0 +1,11 @@
+flask
+logging
+time
+threading
+scipy
+shapely
+numpy
+geopy
+obspy
+shutil
+tarfile
