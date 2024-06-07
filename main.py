@@ -38,7 +38,7 @@ def upload_files():
             # url = UPLOAD_FOLDER+filename
 
             log = ""
-            with open(r"D:\earthquake\gethypocenter\static\log.json","w",encoding="utf-8") as f:
+            with open(r"static\log.json","w",encoding="utf-8") as f:
                 json = "{\"LOG\":\"" + log + "\"}"
                 f.write(json)
 
@@ -47,7 +47,7 @@ def upload_files():
             return render_template('index.html')
         else:
             log = "输入文件不合规"
-            with open(r"D:\earthquake\gethypocenter\static\log.json","w",encoding="utf-8") as f:
+            with open(r"static\log.json","w",encoding="utf-8") as f:
                 json = "{\"LOG\":\"" + log + "\"}"
                 f.write(json)
             return render_template('index.html')
