@@ -42,4 +42,4 @@ python hypocenter.py
 ```
 
 ## 协议
-本仓库代码依据MIT License协议开源
+本仓库代码依据Apache 2.0协议开源
