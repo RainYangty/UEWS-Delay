@@ -14,6 +14,7 @@ import sys
 """
 
 log = ""
+# 初始化
 try:
     seislink = unzip()
 
@@ -72,6 +73,9 @@ with open(r"static\switch.json","w",encoding="utf-8") as f:
     json = "{\"o\":0}"
     f.write(json)
 
+'''
+利用递归去尝试排除触发顺序有误的台站，进行震中计算
+'''
 def hypocenter(prev, prev_center, reportseis, allseis, allseisname, ii, useseis):
     global ok
     global center, use, seistrynum
@@ -113,6 +117,9 @@ def hypocenter(prev, prev_center, reportseis, allseis, allseisname, ii, useseis)
         #print(reportseisesname)
         #print(1)
 
+'''
+计算地球上两点间的面距离,用于修正地震开始时间
+'''
 def length(seita1, fai1, seita2, fai2): #seita:纬度 fai:经度
     distance = geodesic((seita1, fai1), (seita2, fai2)).km
     return distance
@@ -206,7 +213,7 @@ for i in range(len(reportseisesname)):
             f.write(json)
             
         _open = True
-    if triggernum > 20:
+    if triggernum > 20:     #减少计算
         print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()), reportseisesname[i] + ": 计算程序退出，可开始新模拟")
         with open(r"static\log.json","w",encoding="utf-8") as f:
             log += f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} 计算程序退出，可开始新模拟<br>"
