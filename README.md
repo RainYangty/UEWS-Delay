@@ -19,7 +19,7 @@ UEWS仅支持对日本NIDE公开的地震站数据信息进行震中计算，且
 
 NIDE测站数据及位置来源于 https://www.kyoshin.bosai.go.jp/kyoshin/db/index_en.html?all
 
-UEWS 目前并不稳定、完善，随时可能崩溃，若遇到问题，欢迎提交Issue。若因UEWS不稳定导致并未及时发出来自四川地震局公开的「紧急地震信息」地震预警数据，在这里深感歉意捏
+UEWS 目前并不稳定、完善，随时可能崩溃，若遇到问题，欢迎提交Issue。
 
 ## 部署
 务必先cd进入程序文件夹！！！
