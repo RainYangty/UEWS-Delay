@@ -1,5 +1,5 @@
 # Unofficial Earthquake (Delay) Warning System | 非官方地震模拟系统(延迟测定)
-🌐 开源的地震信息模拟系统
+🌐 开源的地震信息架空模拟系统
 
 ## 功能
 - 本地基于Voronoi图计算震中所处区域
@@ -43,6 +43,7 @@ python hypocenter.py
 
 ## 地震预警
 当本地运行惹[UEWS-Web](https://github.com/RainYangty/UEWS-Web) 后，可以在UEWS-Delay网页中很便利地跳转到预警界面，记得考虑端口冲突问题呐
+当本地运行惹[UEWS-DingTalk](https://github.com/RainYangty/UEWS-DingTalk) 后，可以设置进行转发该地震模拟，详情见[UEWS-DingTalk README](https://github.com/RainYangty/UEWS-DingTalk/blob/main/README.md)
 
 ## 协议
 本仓库代码依据Apache 2.0协议开源
