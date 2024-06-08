@@ -130,7 +130,10 @@ document.getElementById("myBtn2").addEventListener("click", function () {
 });
 
 document.getElementById("myBtn7").addEventListener("click", function () {
-    window.location.href = 'https://uews.rainyangty.top';
+    if(window.history.length > 1)
+        window.history.back();
+    else
+        window.location.href = 'https://uews.rainyangty.top';
 });
 
 document.ontouchmove = function (e) {
