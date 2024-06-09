@@ -24,10 +24,12 @@ UEWS 目前并不稳定、完善，随时可能崩溃，若遇到问题，欢迎
 
 ## 部署
 务必先cd进入程序文件夹！！！
+
 ### 安装依赖
 ```
 pip install -r requirements.txt
 ```
+
 ### 运行架空模拟
 注：此无需提前将NIDE下载的测站.tar文件数据放在程序同级文件夹中，且无需解压
 ```
@@ -39,6 +41,24 @@ python main.py
 注：此必须提前将NIDE下载的测站.tar文件数据放在程序同级文件夹中，但无需解压
 ```
 python hypocenter.py
+```
+
+### 修改计算方法
+在 `config.json`中可以通过修改`method`模块进行修改计算方式
+```
+classic     典型STA/LTA
+recursive   递归STA/LTA
+z-detect    z探测
+```
+修改`sta`和`lta`可以改变长短时窗取值，单位s
+
+默认为
+```
+{
+    "method": "classic",
+    "sta": 0.5,
+    "lta": 10
+}
 ```
 
 ## 地震预警

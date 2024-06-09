@@ -1,8 +1,12 @@
 import obspy
 from obspy.signal.trigger import trigger_onset
-from obspy.signal.trigger import classic_sta_lta
+from obspy.signal.trigger import classic_sta_lta, recursive_sta_lta, z_detect, carl_sta_trig
 import time
 import numpy as np
+import json
+
+#先读取配置文件捏
+config = json.load(open("config.json", "r"))
 
 """
 本函数捏实现哩运用STA/LTA算法进行对台站触发顺序进行排序
@@ -30,11 +34,19 @@ def sortseis(sta):
         # print(timeArray)
         # print(time.mktime(timeArray))
         # set the STA=5 seconds, LTA=20 seconds
-        cft = classic_sta_lta(st2[0].data, int(2 * df), int(10 * df))
+        if (config["method"] == "classic"):
+            cft = classic_sta_lta(st2[0].data, int(config["sta"] * df), int(config["lta"] * df))
+        if (config["method"] == "recursive"):
+            cft = recursive_sta_lta(st2[0].data, int(config["sta"] * df), int(config["lta"] * df))
+        if (config["method"] == "z-detect"):
+            cft = z_detect(st2[0].data, int(config["lta"] * df))
+        else:
+            cft = classic_sta_lta(st2[0].data, int(0.5 * df), int(10 * df))
+        
         # set the trigger threshold=1.5, detrigger threshold=0.27
         df = st2[0].stats.sampling_rate
         
-        on_off = np.array(trigger_onset(cft, 1.5, 0.27))
+        on_off = np.array(trigger_onset(cft, 3.5, 1))
         evdp = st2[0].stats.knet.evdp
         mag = st2[0].stats.knet.mag
 
