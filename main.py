@@ -2,8 +2,11 @@ from flask import Flask
 from flask import render_template, request
 import logging
 import os
- 
+from flask_cors import CORS
+
 app = Flask(__name__)
+CORS(app)   #解决跨域问题
+
 @app.route('/') #主页地址,“装饰器”
 def web():
     return render_template('index.html') #把index.html文件读进来，再交给浏览器
