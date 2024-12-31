@@ -1,6 +1,9 @@
 # Unofficial Earthquake (Delay) Warning System | 非官方地震模拟系统(延迟测定)
 🌐 开源的地震信息架空模拟系统
 
+> [!IMPORTANT]
+> 目前网页端及部分代码出现问题，请先使用`CMD_main.py`测定震中
+
 ## 功能
 - 本地基于Voronoi图计算震中所处区域
 - P/S波预计运动模拟
@@ -30,7 +33,7 @@ UEWS 目前并不稳定、完善，随时可能崩溃，若遇到问题，欢迎
 pip install -r requirements.txt
 ```
 
-### 运行架空模拟
+### 运行架空模拟(暂不可用)
 注：此无需提前将NIDE下载的测站.tar文件数据放在程序同级文件夹中，且无需解压
 ```
 python main.py
@@ -40,7 +43,7 @@ python main.py
 ### 仅计算地震
 注：此必须提前将NIDE下载的测站.tar文件数据放在程序同级文件夹中，但无需解压
 ```
-python hypocenter.py
+python CMD_main.py
 ```
 
 ### 修改计算方法
@@ -65,6 +68,12 @@ z-detect    z探测
 当本地运行惹[UEWS-Web](https://github.com/RainYangty/UEWS-Web) 后，可以在UEWS-Delay网页中很便利地跳转到预警界面，记得考虑端口冲突问题呐
 
 当本地运行惹[UEWS-DingTalk](https://github.com/RainYangty/UEWS-DingTalk) 后，可以设置进行转发该地震模拟，详情见[UEWS-DingTalk README](https://github.com/RainYangty/UEWS-DingTalk/blob/main/README.md)
+
+## 更新记录
+
+### 2024-12-31
+新年快乐喵！
+1. 重构Voronoi计算算法
 
 ## 协议
 本仓库代码依据Apache 2.0协议开源
