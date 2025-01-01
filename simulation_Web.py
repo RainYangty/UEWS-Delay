@@ -73,6 +73,9 @@ reporttime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 
 # 开始模拟计算震中
 for i in range(2, len(reportseisesname)):
+    with open(r"static\seis.json","w",encoding="utf-8") as f:
+        json = "{\"Lat\":\"" + str(sepoints[senames.index(reportseisesname[i])][0]) + "\", \"Lon\":\"" + str(sepoints[senames.index(reportseisesname[i])][1]) + "\"}"
+        f.write(json)
     # 存储测定的点与权重
     possiblepoint = []
     weight = [1]
@@ -129,7 +132,7 @@ for i in range(2, len(reportseisesname)):
     else:
         op = True
     # 如果发报次数过多
-    if n >= 10:
+    if n > 10:
         print("锁定")
         with open(r"static\log.json","w",encoding="utf-8") as f:
             log += f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} 震中锁定<br>"
