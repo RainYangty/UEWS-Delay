@@ -75,5 +75,10 @@ z-detect    z探测
 新年快乐喵！
 1. 重构Voronoi计算算法
 
+### 2025-01-01
+新年快乐喵！
+1. 优化Voronoi算法
+2. 给`sta_ltasort.py`文件加注释
+
 ## 协议
 本仓库代码依据Apache 2.0协议开源
