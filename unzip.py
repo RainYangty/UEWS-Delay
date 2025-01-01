@@ -8,7 +8,7 @@ def un_tar(file_name):
         pass
     else:
         os.mkdir(file_name + "_files")
-    #由于解压后是许多文件，预先建立同名文件夹
+    #由于解压后是许多文件, 预先建立同名文件夹
     for name in names:
         tar.extract(name, file_name + "_files/")
     tar.close()
@@ -17,6 +17,9 @@ def un_tar(file_name):
 本函数用来解压NIDE公开的测站数据
 """
 def unzip():
+    """
+    解压NIDE公开的测站数据, 请确保更名为"seis.tar"
+    """
     doc = "seis.tar"
     try:
         shutil.rmtree("seis.tar_files")

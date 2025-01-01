@@ -17,7 +17,7 @@ def static_files(path):
 
 def runWeb():
     app.logger.setLevel(logging.DEBUG)
-    app.run(host='0.0.0.0',debug=False,port=80) #127.0.0.1 回路 自己返回自己
+    app.run(host='0.0.0.0',debug=False,port=8000) #127.0.0.1 回路 自己返回自己
 
 # 上传文件到服务器指定到文件夹中（一定要放在自己起服务到那个文件夹，不要放在本地的其他文件夹中，不然服务器访问不了你的文件）
 UPLOAD_FOLDER = ''

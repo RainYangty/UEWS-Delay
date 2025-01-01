@@ -1,20 +1,28 @@
 from unzip import unzip
 from sta_ltasort import sortseis
-import time
-from threading import Thread
 from scipy.spatial import Voronoi
 from shapely.geometry import Polygon
 import numpy as np
-import shapely
 from geopy.distance import geodesic
+import shapely.errors
+import time
 import sys
 
-"""
-这里写得有点小乱，我错惹......
-"""
+def length(seita1, fai1, seita2, fai2): #seita:纬度 fai:经度
+    distance = geodesic((seita1, fai1), (seita2, fai2)).km
+    return distance
 
+# 准备数据ing
+sepointsx = np.loadtxt(open("sitepub_all_en.csv","rb"),delimiter=",",usecols=[2])
+sepointsy = np.loadtxt(open("sitepub_all_en.csv","rb"),delimiter=",",usecols=[3])
+sepoints = []
+senames = []
 log = ""
-# 初始化
+for i, j in enumerate(sepointsx):
+    sepoints.append([sepointsx[i], sepointsy[i]])
+for i in np.loadtxt(open("sitepub_all_en.csv","rb"),delimiter=",",usecols=[0],dtype=np.str_):
+    senames.append(i)
+
 try:
     seislink = unzip()
 
@@ -39,188 +47,105 @@ except:
         f.write(json)
     sys.exit()
 
-triggernum = 0
-
-sepointsx = np.loadtxt(open("sitepub_all_en.csv","rb"),delimiter=",",usecols=[2])
-sepointsy = np.loadtxt(open("sitepub_all_en.csv","rb"),delimiter=",",usecols=[3])
-sepoints = []
-senames = []
-for i, j in enumerate(sepointsx):
-    sepoints.append([sepointsx[i], sepointsy[i]])
-for i in np.loadtxt(open("sitepub_all_en.csv","rb"),delimiter=",",usecols=[0],dtype=np.str_):
-    senames.append(i)
-
+# 计算触发的站台形成的Voronoi图
 seisvoronoi = []
-# 计算站台的泰森多边形
 vor = Voronoi(sepoints)
-for i in vor.regions[vor.point_region[senames.index(reportseisesname[0])]]:
-    seisvoronoi.append(vor.vertices[i].tolist())
-seisvoronoi = Polygon(seisvoronoi)
-center = []
-use = []
-_open = False
-ok = False
-seistrynum = 0
-reportnum = 0
-prevcenter = []
-prevuse = []
-n = 1
-lock = 0
-reporttime = 0
-error = False
 
+# 前一个台站与后一个台站Voronoi区域数据
+first = []
+# 找到首触发台站的图
+for i in vor.regions[vor.point_region[senames.index(reportseisesname[0])]]:
+        first.append(vor.vertices[i].tolist())
+
+# 打开开关
 with open(r"static\switch.json","w",encoding="utf-8") as f:
     json = "{\"o\":0}"
     f.write(json)
 
-'''
-利用递归去尝试排除触发顺序有误的台站，进行震中计算
-'''
-def hypocenter(prev, prev_center, reportseis, allseis, allseisname, ii, useseis):
-    global ok
-    global center, use, seistrynum
-    try:
-        useseis.append(allseisname[allseisname.index(reportseis[0])])
-        allseis.pop(allseisname.index(reportseis[0]))
-        allseisname.pop(allseisname.index(reportseis[0]))
-        reportseis.pop(0)
+# 上一步测定结果
+prevx, prevy = 0, 0
+# 发报数
+n = 1
+# 间隔几次测定发报
+op = True
+# 发报时间
+reporttime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+
+# 开始模拟计算震中
+for i in range(2, len(reportseisesname)):
+    # 存储测定的点与权重
+    possiblepoint = []
+    weight = [1]
+    # 拷贝变量ing
+    prev, current = [], []
+    prev.append(Polygon(first))
+    _sepoints = sepoints.copy()
+    _senames = senames.copy()
+    _reportseisesname = reportseisesname[0:i].copy()
+    while len(_reportseisesname) >= 2:
+        # 删去最早的台站
+        _sepoints.pop(_senames.index(_reportseisesname[0]))
+        _senames.pop(_senames.index(_reportseisesname[0]))
+        _reportseisesname.pop(0)
+        # 重新绘制新Voronoi图
         current = []
-        # 计算去掉触发测站后的泰森多边形
-        vor = Voronoi(allseis)
-        for i in vor.regions[vor.point_region[allseisname.index(reportseis[0])]]:
+        vor = Voronoi(_sepoints)
+        for i in vor.regions[vor.point_region[_senames.index(_reportseisesname[0])]]:
             current.append(vor.vertices[i].tolist())
-    except IndexError:
-        return
-    try:
-        prev = prev.intersection(Polygon(current))
-    except shapely.errors.GEOSException:
-        return
-    if prev.centroid.is_empty:
-        return
-    if prev_center != [] and prev.centroid != []:
-        if ii > seistrynum:
-            center = prev.centroid
-            seistrynum = ii
-            center = prev.centroid
-            use = useseis
-        if format(prev_center.x, '.3f') == format(prev.centroid.x, '.3f') and format(prev_center.y, '.3f') == format(prev.centroid.y, '.3f'):
-            # print("锁定")
-            return
-    a = prev.centroid
-    for i in range(len(reportseis)):
-        hypocenter(prev, a, reportseis.copy(), allseis.copy(), allseisname.copy(), ii+1, useseis.copy())
-        if ok:
-            return
-        allseis.pop(allseisname.index(reportseis[0]))
-        allseisname.pop(allseisname.index(reportseis[0]))
-        reportseis.pop(0)
-        #print(reportseisesname)
-        #print(1)
 
-'''
-计算地球上两点间的面距离,用于修正地震开始时间
-'''
-def length(seita1, fai1, seita2, fai2): #seita:纬度 fai:经度
-    distance = geodesic((seita1, fai1), (seita2, fai2)).km
-    return distance
+        # 下一个触发台站所在的Voronoi区域与前计算结果区域取交集
+        prev.append(prev[-1].intersection(Polygon(current)))
 
-def cal():
-    global ok, sepoints, senames, evdp, mag, log, error
-    global center, use, seistrynum, prevcenter, prevuse, reportnum, n, reporttime, triggernum
-    while triggernum <= 10: #len(reportseisesname):
-        if triggernum >= 3:
-            #print("Finding")
-            reportseisesname_copy = reportseisesname[:triggernum - 1].copy()
-            sepoints_copy = sepoints.copy()
-            senames_copy = senames.copy()
-            use_copy = use.copy()
+        # 如果没有交集惹，那就保存该结果与权重
+        if prev[-1].centroid.is_empty:
+            possiblepoint.append(prev[-2].centroid)
+            prev[-1] = Polygon(current)
+            weight.append(1)
+            continue
+        # 有交集权重+1
+        weight[-1] += 1
 
-            hypocenter(seisvoronoi, center, reportseisesname_copy.copy(), sepoints_copy.copy(), senames_copy.copy(), 0, use_copy.copy())
+    # 加权计算结果
+    resultx = 0
+    resulty = 0
+    totalweight = 0
+    for i in range(len(possiblepoint)):
+        resultx += possiblepoint[i].x * weight[i]
+        resulty += possiblepoint[i].y * weight[i]
+        totalweight += weight[i]
 
-            if prevuse != use:
-                print("第", str(n), "报: ", "北纬", format(center.x, '.3f'), "东经", format(center.y, '.3f'))
-                with open(r"static\log.json","w",encoding="utf-8") as f:
-                    log += f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} 第{n}报: 北纬{format(center.x, '.3f')} 东经{format(center.y, '.3f')}<br>"
-                    json = "{\"LOG\":\"" + log + "\"}"
-                    f.write(json)
-                print(use)
-                with open(r"static\sc_eew.json","w",encoding="utf-8") as f:
-                    file_data = "{\"ID\": 111,\"EventID\": \"20240101070418" + str(n) + "\",\"ReportTime\": \"" + reporttime + "\",\"ReportNum\": " + str(n) + ",\"OriginTime\": \"" + reporttime + "\",\"HypoCenter\": \"架空模拟\",\"Latitude\": " + str(format(center.x, '.3f')) + ",\"Longitude\": " + str(format(center.y, '.3f')) + ",\"Magunitude\": " + str(mag) + ", \"Depth\": " + str(evdp) + ", \"Delta\": " + str(length(sepoints[senames.index(use[0])][0], sepoints[senames.index(use[0])][1], format(center.x, '.3f'), format(center.y, '.3f')) / 7.0) + "}"
-                    f.write(file_data)
-                n += 1
-                if prevcenter != []:
-                    if format(prevcenter.x, '.3f') == format(center.x, '.3f') and format(prevcenter.y, '.3f') == format(center.y, '.3f'):
-                        print("锁定")
-                        with open(r"static\log.json","w",encoding="utf-8") as f:
-                            log += f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} 震中锁定<br>"
-                            json = "{\"LOG\":\"" + log + "\"}"
-                            f.write(json)
-                        prevcenter = center
-                        prevuse = use
-                        break
-            prevcenter = center
-            prevuse = use
-            if prevcenter == []:
-                if n == 1:
-                    error = True
-                    with open(r"static\log.json","w",encoding="utf-8") as f:
-                        log += f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} 第{n}报: 北纬{format(sepointsx[senames_copy.index(reportseisesname_copy[0])], '.3f')} 东经{format(sepointsy[senames_copy.index(reportseisesname_copy[0])], '.3f')}(首站)<br>"
-                        json = "{\"LOG\":\"" + log + "\"}"
-                        f.write(json)
-                    with open(r"static\sc_eew.json","w",encoding="utf-8") as f:
-                        file_data = "{\"ID\": 111,\"EventID\": \"20240101070418" + str(n) + "\",\"ReportTime\": \"" + reporttime + "\",\"ReportNum\": " + str(n) + ",\"OriginTime\": \"" + reporttime + f"\",\"HypoCenter\": \"架空模拟\",\"Latitude\": {format(sepointsx[senames_copy.index(reportseisesname_copy[0])], '.3f')},\"Longitude\": {format(sepointsy[senames_copy.index(reportseisesname_copy[0])], '.3f')},\"Magunitude\": " + str(mag) + ", \"Depth\": " + str(evdp) + ", \"Delta\": " + str(0) + "}"
-                        f.write(file_data)
-                    n += 1
-                #print("数据错误")
-                sepoints_copy.pop(senames_copy.index(reportseisesname_copy[0]))
-                senames_copy.pop(senames_copy.index(reportseisesname_copy[0]))
-                reportseisesname_copy.pop(0)
-            seistrynum = 0
-            center = []
-            use = []
-            if j == len(reportseisesname) - 1:
-                #print("锁定(测站用尽惹)")
-                break
-
-            reportnum += 1
-            #print("第" + str(reportnum) + "报: " + str(prevcenter))
-    with open(r"static\log.json","w",encoding="utf-8") as f:
-        log += f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} 震中锁定<br>"
-        json = "{\"LOG\":\"" + log + "\"}"
-        f.write(json)
-    print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()), reportseisesname[i] + ": 震中锁定，退出计算")
-    return
-t=Thread(target=cal)
-t.start()
-time.sleep(4)
-for i in range(len(reportseisesname)):
-    if i == 0:
-        reporttime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-    with open(r"static\log.json","w",encoding="utf-8") as f:
-        log += f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} 检测到震动 {reportseisesname[i]}<br>"
-        json = "{\"LOG\":\"" + log + "\"}"
-        f.write(json)
-    print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()), reportseisesname[i] + ": 检测到震动")
-    with open(r"static\seis.json","w",encoding="utf-8") as f:
-        json = "{\"Lat\":\"" + str(sepointsx[senames.index(reportseisesname[i])]) + "\", \"Lon\":\"" + str(sepointsy[senames.index(reportseisesname[i])]) + "\"}"
-        f.write(json)
-    triggernum += 1
-    if triggernum >= 3 and _open == False:
-        print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()), "确定地震事件发生，开始调查震中")
+    print(format(resultx / totalweight, '.2f'), format(resulty / totalweight, '.2f'))
+    # 发报
+    if op:
         with open(r"static\log.json","w",encoding="utf-8") as f:
-            log += f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} 确定事件发生，开始调查<br>"
+            log += f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} 第{n}报: 北纬{format(resultx / totalweight, '.2f')} 东经{format(resulty / totalweight, '.2f')}<br>"
             json = "{\"LOG\":\"" + log + "\"}"
             f.write(json)
-            
-        _open = True
-    if triggernum > 20:     #减少计算
-        print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()), reportseisesname[i] + ": 计算程序退出，可开始新模拟")
+        with open(r"static\sc_eew.json","w",encoding="utf-8") as f:
+            file_data = "{\"ID\": 111,\"EventID\": \"20240101070418" + str(n) + "\",\"ReportTime\": \"" + reporttime + "\",\"ReportNum\": " + str(n) + ",\"OriginTime\": \"" + reporttime + "\",\"HypoCenter\": \"架空模拟\",\"Latitude\": " + str(format(resultx / totalweight, '.2f')) + ",\"Longitude\": " + str(format(resulty / totalweight, '.2f')) + ",\"Magunitude\": " + str(mag) + ", \"Depth\": " + str(evdp) + ", \"Delta\": " + str(length(_sepoints[_senames.index(_reportseisesname[0])][0], _sepoints[_senames.index(_reportseisesname[0])][1], format(resultx / totalweight, '.2f'), format(resulty / totalweight, '.2f')) / 7.0) + "}"
+            f.write(file_data)
+        n += 1
+        op = False
+    else:
+        op = True
+    # 如果发报次数过多
+    if n >= 10:
+        print("锁定")
         with open(r"static\log.json","w",encoding="utf-8") as f:
-            log += f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} 计算程序退出，可开始新模拟<br>"
+            log += f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} 震中锁定<br>"
             json = "{\"LOG\":\"" + log + "\"}"
             f.write(json)
-            with open(r"static\switch.json","w",encoding="utf-8") as f:
-                json = "{\"o\":1}"
-                f.write(json)
-            break
+        break
+
+    prevx = resultx / totalweight
+    prevy = resulty / totalweight
+
     time.sleep(reportseisestime[i])
+
+with open(r"static\log.json","w",encoding="utf-8") as f:
+    log += f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} 计算程序退出，可开始新模拟<br>"
+    json = "{\"LOG\":\"" + log + "\"}"
+    f.write(json)
+    with open(r"static\switch.json","w",encoding="utf-8") as f:
+        json = "{\"o\":1}"
+        f.write(json)

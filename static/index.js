@@ -1,7 +1,5 @@
 $("#warning_textbox").css("visibility", "visible");
 $("#currentTime").css("color", "white");
-var typ = '正式接口呐';
-document.getElementById("warning_textbox").innerHTML = typ;
 
 var drawseis = false;
 
@@ -127,13 +125,6 @@ document.getElementById("myBtn3").addEventListener("click", function () {
 
 document.getElementById("myBtn2").addEventListener("click", function () {
     backcenter();
-});
-
-document.getElementById("myBtn7").addEventListener("click", function () {
-    if(window.history.length > 1)
-        window.history.back();
-    else
-        window.location.href = 'https://uews.rainyangty.top';
 });
 
 document.ontouchmove = function (e) {
