@@ -18,12 +18,12 @@ def sortseis(sta):
     返回:
     seisname(list): 排好顺序后的地震站名称
     seistime(list): P波到时对应时间戳
-    evdp(float):    地震站深度
+    evdp(float):    从文件中获取到的震源深度
     mag(float):     从文件中获取到的震级
     """
     seistime = []  # 用于存储每个台站检测到的P波到时对应的时间戳
     seisname = []  # 用于存储台站名称
-    evdp = 0  # 初始化地震站深度，后续会进行赋值
+    evdp = 0  # 初始化震源深度，后续会进行赋值
     mag = 0  # 初始化震级，后续会进行赋值
     op = False  # 一个标志位，用于判断是否是第一次添加数据到seistime和seisname列表中
 
@@ -65,7 +65,7 @@ def sortseis(sta):
         # 使用trigger_onset函数根据计算得到的特征函数cft来检测触发时刻，触发阈值为3.5，返回的结果转换为numpy数组方便后续处理
         on_off = np.array(trigger_onset(cft, 3.5, 1))
 
-        evdp = st2[0].stats.knet.evdp  # 获取地震站深度信息，从数据的相关属性中提取，具体取决于数据格式和存储结构
+        evdp = st2[0].stats.knet.evdp  # 获取震源深度信息，从数据的相关属性中提取
         mag = st2[0].stats.knet.mag  # 获取震级信息，同样从数据的对应属性中获取
 
         # 如果检测到了触发时刻（即on_off数组有元素）
@@ -103,9 +103,8 @@ def sortseis(sta):
                 seisname.append(st2[0].stats.station)
                 # 将op标志位设为True，表示已经添加过数据了，后续就按非第一次的逻辑处理
                 op = True
-
     return seisname, seistime, evdp, mag
 
 
 # 调用sortseis函数，传入一个包含地震波形数据文件路径的列表，这里只传入了一个文件路径作为示例，实际应用中可以传入多个文件路径
-# sortseis(["seis.tar_files/CHB0042411012316.tar.gz_files/CHB0042411012316.EW"])
+# sortseis(["seis.tar_files\CHB0082412041911.tar.gz_files\CHB0082412041911.EW"])
