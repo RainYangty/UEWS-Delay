@@ -13,15 +13,20 @@ def length(seita1, fai1, seita2, fai2): #seita:纬度 fai:经度
     return distance
 
 # 准备数据ing
-sepointsx = np.loadtxt(open("sitepub_all_en.csv","rb"),delimiter=",",usecols=[2])
-sepointsy = np.loadtxt(open("sitepub_all_en.csv","rb"),delimiter=",",usecols=[3])
-sepoints = []
-senames = []
-log = ""
+sepoints  = []
+senames   = []
+stationdata = []
+with open("sitepub_all_en.csv", "rb") as stationdata:
+    sepointsx = np.loadtxt(stationdata,delimiter=",",usecols=[2])
+    # 将文件指针移回开头
+    stationdata.seek(0)
+    sepointsy = np.loadtxt(stationdata,delimiter=",",usecols=[3])
+    stationdata.seek(0)
+    for i in np.loadtxt(stationdata,delimiter=",",usecols=[0],dtype=np.str_):
+        senames.append(i)
 for i, j in enumerate(sepointsx):
     sepoints.append([sepointsx[i], sepointsy[i]])
-for i in np.loadtxt(open("sitepub_all_en.csv","rb"),delimiter=",",usecols=[0],dtype=np.str_):
-    senames.append(i)
+log = ""
 
 try:
     seislink = unzip()
@@ -105,6 +110,8 @@ for i in range(2, len(reportseisesname)):
             prev[-1] = Polygon(current)
             weight.append(1)
             continue
+        elif len(reportseisesname) == 2:
+            possiblepoint.append(prev[-1].centroid)
         # 有交集权重+1
         weight[-1] += 1
 
