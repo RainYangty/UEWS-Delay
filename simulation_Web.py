@@ -1,4 +1,4 @@
-from unzip import unzip
+from _unzip import unzip
 from sta_ltasort import sortseis
 from scipy.spatial import Voronoi
 from shapely.geometry import Polygon
