@@ -6,7 +6,7 @@ from shapely.geometry import Polygon
 from _unzip import unzip
 from sta_ltasort import sortseis
 from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, TimeRemainingColumn, TimeElapsedColumn
-
+from seis import updated_one_seis
 """
 --- 输入数据  ---
 sepoints: 所有地震台站的坐标列表 (例如 [(x1, y1), (x2, y2), ...])
@@ -46,15 +46,40 @@ seislink = unzip()
 
 reportseisesname, _, _, _ = sortseis(seislink)
 
-# 存储触发台站点位便于绘图
-reportpoints = []
+no_data = 0
+with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            TimeRemainingColumn(),
+            TimeElapsedColumn(),
+            refresh_per_second = 100,
+) as progress:
+    task = progress.add_task("核对台站数据", total = len(reportseisesname))
+    # print("核对台站数据")
+    for i in reportseisesname:
+        try:
+            senames.index(i)
+        except:
+            pointx, pointy = updated_one_seis(i, seislink)
+            no_data += 1
+            if not pointx == None:
+                sepoints.append([round(pointx, 4), round(pointy, 4)])
+                senames.append(i)
+        progress.update(task, advance = 1)
+
+if no_data:
+    print(f"{no_data}个台站表中无数据, 请及时更新台站表格数据")
+
+# 存储台站点位便于绘图
+seispoints = []
 for i in reportseisesname:
-    reportpoints.append(sepoints[senames.index(i)])
+    seispoints.append(sepoints[senames.index(i)])   
 
 """ 
 --- 步骤 1: 初始化 Voronoi 图和初始区域 ---
 """
-
 # 计算最初触发的台站形成的 Voronoi 图
 # 这将平面划分为 Voronoi 区域，每个区域包含离某个特定台站最近的所有点
 vor = Voronoi(sepoints)
@@ -63,28 +88,6 @@ vor = Voronoi(sepoints)
 area_history, current_region_vertices = [], []
 
 # 找到 *第一个* 触发台站对应的 Voronoi 区域
-
-# 在原始台站名称列表中找到第一个触发台站的索引
-first_station_index = senames.index(reportseisesname[0])
-# 获取与该台站对应的 Voronoi 区域的索引
-first_region_index = vor.point_region[first_station_index]
-# 获取该区域的顶点索引列表
-first_region_vertex_indices = vor.regions[first_region_index]
-# 获取该区域每个顶点的坐标并存储
-for i in first_region_vertex_indices:
-    current_region_vertices.append(vor.vertices[i].tolist())
-# 从顶点创建第一个台站 Voronoi 区域的 Polygon 对象
-# 这个多边形代表了震中最初的可能区域
-initial_area = Polygon(current_region_vertices)
-area_history.append(initial_area)
-# 存储确定的潜在震中点 (交集区域的质心)
-# 以及它们对应的权重。
-possible_epicenters = []
-weights = [1]    # 第一个区域质心的初始权重
-
-"""
---- 步骤 2: 遍历触发台站以细化区域 ---
-"""
 with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -93,7 +96,30 @@ with Progress(
             TimeRemainingColumn(),
             TimeElapsedColumn()
 ) as progress:
-    task = progress.add_task("进行震中计算", total = len(reportseisesname) - 2)
+    task = progress.add_task("进行震中计算", total = len(reportseisesname) - 1)
+    # 在原始台站名称列表中找到第一个触发台站的索引
+    first_station_index = senames.index(reportseisesname[0])
+    reportseisesname.pop(0)
+    # 获取与该台站对应的 Voronoi 区域的索引
+    first_region_index = vor.point_region[first_station_index]
+    # 获取该区域的顶点索引列表
+    first_region_vertex_indices = vor.regions[first_region_index]
+    # 获取该区域每个顶点的坐标并存储
+    for i in first_region_vertex_indices:
+        current_region_vertices.append(vor.vertices[i].tolist())
+    # 从顶点创建第一个台站 Voronoi 区域的 Polygon 对象
+    # 这个多边形代表了震中最初的可能区域
+    initial_area = Polygon(current_region_vertices)
+    area_history.append(initial_area)
+    # 存储确定的潜在震中点 (交集区域的质心)
+    # 以及它们对应的权重。
+    possible_epicenters = []
+    weights = [1]    # 第一个区域质心的初始权重
+    progress.update(task, advance = 1)
+
+    """
+    --- 步骤 2: 遍历触发台站以细化区域 ---
+    """
     # 从第二个触发台站开始处理。
     # 循环继续，只要触发顺序列表中还剩下至少两个台站。
     # 第一个台站已用于初始化，循环处理后续的台站
@@ -123,8 +149,11 @@ with Progress(
 
         # 计算之前的累积区域与当前台站区域的交集。
         # area_history[-1] 是上一步计算得到的累积交集区域。
-        area_history.append(area_history[-1].intersection(current_station_voronoi_area))
-
+        try:
+            area_history.append(area_history[-1].intersection(current_station_voronoi_area))
+        except:
+            print("请立即更新台站数据表，否则无法计算，计算程序退出")
+            break
         # 更新进度
         progress.update(task, advance = 1)
 
@@ -178,10 +207,10 @@ plt.figure(figsize=(10, 10))
 # 建立颜色列表，及建立标签类别列表
 colors = ['black', 'red']  
 labels = ['seis', 'Voronoi']
-reportpoints = np.array(reportpoints)
+seispoints = np.array(seispoints)
 # 绘图
-plt.scatter(reportpoints[:, 0],  # 横坐标
-            reportpoints[:, 1],  # 纵坐标
+plt.scatter(seispoints[:, 0],  # 横坐标
+            seispoints[:, 1],  # 纵坐标
             marker='^', # 标记: 向上三角形
             c=colors[0],  # 颜色
             label=labels[0])  # 标签
