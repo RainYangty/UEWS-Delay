@@ -113,7 +113,7 @@ with Progress(
     area_history.append(initial_area)
     # 存储确定的潜在震中点 (交集区域的质心)
     # 以及它们对应的权重。
-    possible_epicenters = []
+    possible_region = [initial_area]
     weights = [1]    # 第一个区域质心的初始权重
     progress.update(task, advance = 1)
 
@@ -135,7 +135,7 @@ with Progress(
         
         # 基于剩余的台站重新计算 Voronoi 图
         current_region_vertices = []
-        vor     = Voronoi(sepoints)
+        vor                     = Voronoi(sepoints)
 
         # 在 *新的* 图中找到下一个触发台站对应的 Voronoi 区域
         next_station_index          = senames.index(next_station_name)
@@ -148,40 +148,24 @@ with Progress(
         current_station_voronoi_area = Polygon(current_region_vertices)
 
         # 计算之前的累积区域与当前台站区域的交集。
-        # area_history[-1] 是上一步计算得到的累积交集区域。
+        # 若均无交集则另辟蹊径，再建新的累计区域
         try:
-            area_history.append(area_history[-1].intersection(current_station_voronoi_area))
+            intered = False
+            for region_index, region in enumerate(possible_region):
+                intersection = region.intersection(current_station_voronoi_area)
+                if not intersection.is_empty:
+                    intered = True
+                    weights[region_index] += 1
+            if not intered:
+                # 新建累计区域
+                possible_region.append(current_station_voronoi_area)
+                # 为这个新的潜在区域序列开始一个新的权重，初始值为 1。
+                weights.append(1)
         except:
-            print("请立即更新台站数据表，否则无法计算，计算程序退出")
+            print("请立即更新台站数据表，计算程序退出")
             break
         # 更新进度
         progress.update(task, advance = 1)
-
-        # 检查交集是否产生了非空的几何对象 (例如，多边形)
-        # 如果 centroid 属性为空，通常意味着交集为空或维度更低 (点、线)
-        if area_history[-1].centroid.is_empty:
-            # 如果交集为空，说明在处理前一个台站时确定的区域是基于之前的台站的最佳可能区域
-            # 将这个 *之前* 区域 (在发生空交集之前) 的质心保存为潜在的震中候选点
-            # area_history[-2] 是当前空交集之前的非空区域
-            possible_epicenters.append(area_history[-2].centroid)
-            # print(f"\r 可能震中: {area_history[-2].centroid}, 相关性: {weights[-1]}", end = "", flush = True)
-            # 将 *下一个* 迭代的累积区域重置为仅包含当前台站的区域
-            # 这将从该台站开始，重新开始一个新的潜在区域计算序列
-            # 用新的起始区域覆盖 area_history 中的最后一个元素 (即那个空交集)
-            area_history[-1] = Polygon(current_region_vertices)
-            # 为这个新的潜在区域序列开始一个新的权重，初始值为 1。
-            weights.append(1)
-            continue
-        # 如果交集非空，并且这是循环的最后一次迭代
-        # 只剩下两个台站意味着正在处理最后一对
-        elif len(reportseisesname) == 2:
-            # 将最终交集区域的质心保存为最后一个潜在的震中候选点
-            possible_epicenters.append(area_history[-1].centroid)
-
-        # 如果交集非空
-        # 说明当前台站的区域进一步细化了可能的区域
-        # 增加与这个连续区域相关的潜在震中候选点的权重
-        weights[-1] += 1
 
 """
 --- 步骤 3: 计算加权平均结果 ---
@@ -190,13 +174,14 @@ resultx      = 0
 resulty      = 0
 totalweights = 0
 # 遍历保存的候选点及其对应的权重。
-for i in range(len(possible_epicenters)):
-    point    = possible_epicenters[i]
+for i in range(len(possible_region)):
+    point    = possible_region[i].centroid
     weight   = weights[i]
-
-    resultx += point.x * weight
-    resulty += point.y * weight
-    totalweights += weight
+    # 去除只由单一台站确定的区域
+    if weight > 1:
+        resultx += point.x * weight
+        resulty += point.y * weight
+        totalweights += weight
 
 print(f"({format(resultx / totalweights, '.2f')}, {format(resulty / totalweights, '.2f')})")
 
